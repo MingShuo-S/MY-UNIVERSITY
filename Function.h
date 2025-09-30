@@ -34,5 +34,6 @@ int DeepAccumulation();
 int DASortIntoAfter();
 
 
+
 //内部函数：
 void AutoAppEnter(std::fstream& p); //可以自动检查是否需要在输入开头换行，避免直接跟到同一行末尾

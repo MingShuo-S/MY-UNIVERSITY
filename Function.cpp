@@ -11,6 +11,7 @@
 #define OUTPUT_FILE_PATH "C:\\Users\\29548\\Desktop\\Sunshine\\Words\\AFTER.txt"
 #define PLUS_INPUT_FILE_PATH "C:\\Users\\29548\\Desktop\\Sunshine\\Words\\DEEP_ACCUMULATION.txt"
 #define PLUS_OUTPUT_FILE_PATH "C:\\Users\\29548\\Desktop\\Sunshine\\Words\\AFTER_DEEP_ACCUMULATION.txt"
+#define BOOK_FILE_PATH "C:\\Users\\29548\\Desktop\\Sunshine\\Words\\BOOK.txt"
 
 //#define INPUT_FILE_PATH "C:\\Users\\29548\\Desktop\\Sunshine\\Course_study\\INCLASS.txt"
 //#define OUTPUT_FILE_PATH "C:\\Users\\29548\\Desktop\\Sunshine\\Course_study\\AFTERSORT.txt"
@@ -417,10 +418,6 @@ int DASortIntoAfter()
     outFile.close();
     return 0;
 }
-
-
-
-
 
 
 
