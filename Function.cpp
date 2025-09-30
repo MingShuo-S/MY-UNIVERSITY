@@ -176,7 +176,7 @@ int AddWordInWORDS()
             goto s_end;
 
         std::cout<<"\n您输入的是："<<word<<" "<<meaning<<std::endl;
-        std::cout<<"请确认是否有误，确认无误请输入1,无误输入2进入单词深度积累:";
+        std::cout<<"请确认是否有误，确认无误请输入1,确认无误后要进入单词深度积累输入2:";
         std::cin>>flag;
         if(flag=="1")
             std::cout<<"\n正在录入文件……"<<std::endl<<std::endl;
