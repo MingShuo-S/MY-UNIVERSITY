@@ -32,7 +32,7 @@ int SortintoAFTER()
         return 1;
     }
 
-    std::vector<Word> words(5000);
+    std::vector<Word> words;
     std::string word, meaning;
     Word p;
 
@@ -41,12 +41,12 @@ int SortintoAFTER()
         if(word == "Day") 
         {
             inFile>>word;
-            i--;
             continue;
         }
         inFile >> meaning;
-        words[i].word = word;
-        words[i].meaning = meaning;
+        p.word = word;
+        p.meaning = meaning;
+        words.push_back(p);
         n++;
     }
 
@@ -131,7 +131,9 @@ int SearchInWithSentence(std::string& word1)
 int AddWordInWORDS()
 {    
     std::fstream AppFile(INPUT_FILE_PATH,std::ios::in|std::ios::out);
+    std::fstream PAppFile(PLUS_INPUT_FILE_PATH,std::ios::in|std::ios::out);
     AutoAppEnter(AppFile);
+    AutoAppEnter(PAppFile);
 
     std::string flag,byte;
     int n=0;
@@ -153,6 +155,8 @@ int AddWordInWORDS()
         }
         else if(flag=="N")
         {
+            AppFile.clear();
+            AppFile.seekp(0,std::ios::end);
             break;
         }
         else
@@ -164,16 +168,27 @@ int AddWordInWORDS()
     while(word!="0"&&meaning!="0")
     {
         std::cout<<"请添加单词和中文释义（中间用空格隔开）："<<std::endl;
-        std::cin>>word>>meaning;
-
-        if(word=="0"||meaning=="0")
+        std::cin>>word;
+        if(word=="0")
+            goto s_end;
+        std::cin>>meaning;
+        if(meaning=="0")
             goto s_end;
 
         std::cout<<"\n您输入的是："<<word<<" "<<meaning<<std::endl;
-        std::cout<<"请确认是否有误，确认无误请输入1:";
+        std::cout<<"请确认是否有误，确认无误请输入1,无误输入2进入单词深度积累:";
         std::cin>>flag;
         if(flag=="1")
             std::cout<<"\n正在录入文件……"<<std::endl<<std::endl;
+        if(flag=="2")
+        {
+            std::cout<<"\n该单词已经进入深度积累……\n"<<std::endl;
+            WordPlus pp=BeWordPlus(word,meaning);
+            PAppFile.clear();
+            PAppFile.seekp(0,std::ios::end);
+            PAppFile<<pp<<std::endl;
+            std::cout<<"已将深度积累后的单词插入DEEP_ACCUMULATION.txt\n"<<std::endl;
+        }
         else
         {
             std::cout<<"收到，请重新输入————"<<std::endl;
@@ -186,6 +201,7 @@ int AddWordInWORDS()
 
     s_end:
     AppFile.close();
+    PAppFile.close();
     return 0;
 }
 
@@ -344,9 +360,7 @@ int DeepAccumulation()
         std::cout<<"已同步到WORDS.txt！"<<std::endl;
 
         flag="0";
-        std::cout<<"\n是否继续输入？继续输入请输入1：";
-        std::cin>>flag;
-        if(flag!="1") break;
+        std::cout<<"\n如要暂停输入，请在后续首次输入0"<<std::endl;
     }
     PlusOutFile.close();
     return 0;
@@ -363,7 +377,7 @@ int DASortIntoAfter()
         return 1;
     }
 
-    std::vector<Word> words(500);
+    std::vector<Word> words;
     std::string word, meaning,line;
     Word p;
 
@@ -378,8 +392,9 @@ int DASortIntoAfter()
             getline(inFile,line);
             meaning+=line+'\n';
         }
-        words[i].word = word;
-        words[i].meaning = meaning;
+        p.word = word;
+        p.meaning = meaning;
+        words.push_back(p);
         n++;
     }
 

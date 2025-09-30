@@ -42,4 +42,8 @@ public:
     void reset();
     friend std::ostream& operator<<(std::ostream& os,const WordPlus& wordplus);
     friend void GetWordPlus(WordPlus& wordplus);
+    friend WordPlus BeWordPlus(std::string const& inword,std::string const& inmeaning);
 };
+
+void GetWordPlus(WordPlus& wordplus);
+WordPlus BeWordPlus(std::string const& inword,std::string const& inmeaning);

@@ -55,14 +55,16 @@ std::ostream& operator<<(std::ostream& os,const WordPlus& p)
     return os;
 }
 
+
 void GetWordPlus(WordPlus& wordplus)
 {
     std::string flag="-1",phrase,pmeaning,sentence;
     while(flag!="1")
     {
         std::cout<<"请输入单词、词性与中文释义（均用空格隔开）:"<<std::endl;
-        std::cin>>wordplus.word>>wordplus.WordClass>>wordplus.meaning;
+        std::cin>>wordplus.word;
         if(wordplus.word=="0") goto end;
+        std::cin>>wordplus.WordClass>>wordplus.meaning;
         std::cout<<"\n您刚刚输入的是：\n"<<wordplus.word<<'\n'<<wordplus.WordClass<<' '<<wordplus.meaning<<"\n确认无误请输入1:";
         std::cin>>flag;
     }
@@ -76,8 +78,10 @@ void GetWordPlus(WordPlus& wordplus)
             std::cout<<"请输入词组与中文释义（换行隔开）："<<std::endl;
             while(getchar()!='\n');
             getline(std::cin,phrase);
+            if(phrase=="0")
+                break;
             std::cin>>pmeaning;
-            if(phrase=="0"||pmeaning=="0")
+            if(pmeaning=="0")
                 break;
             std::cout<<"\n您刚刚输入的是："<<phrase<<' '<<pmeaning<<"\n确认无误请输入1:";
             std::cin>>flag;
@@ -115,3 +119,71 @@ void GetWordPlus(WordPlus& wordplus)
     return;
 }
 
+WordPlus BeWordPlus(std::string const& inword,std::string const& inmeaning)
+{
+    WordPlus wordplus;
+    wordplus.word=inword;
+    wordplus.meaning=inmeaning;
+
+    std::string flag="-1",phrase,pmeaning,sentence;
+    while(flag!="1")
+    {
+        std::cout<<"请补充词性:"<<std::endl;
+        std::cin>>wordplus.WordClass;
+        if(wordplus.word=="0"||wordplus.WordClass=="0") goto end;
+        std::cout<<"\n此输入是：\n"<<wordplus.word<<'\n'<<wordplus.WordClass<<' '<<wordplus.meaning<<"\n确认无误请输入1:";
+        std::cin>>flag;
+    }
+    flag="-1";
+
+    while(phrase!="0"&&pmeaning!="0")
+    {
+        std::cout<<"正在添加词组……\n若不添加请任意一项输入0\n"<<std::endl;
+        while(flag!="1")
+        {
+            std::cout<<"请输入词组与中文释义（换行隔开）："<<std::endl;
+            while(getchar()!='\n');
+            getline(std::cin,phrase);
+            if(phrase=="0")
+                break;
+            std::cin>>pmeaning;
+            if(pmeaning=="0")
+                break;
+            std::cout<<"\n您刚刚输入的是："<<phrase<<' '<<pmeaning<<"\n确认无误请输入1:";
+            std::cin>>flag;
+        }
+        if(phrase=="0"||pmeaning=="0")
+            break;
+        wordplus.Phrases.emplace_back(phrase);
+        wordplus.PhrasesMeaning.emplace_back(pmeaning);
+        std::cout<<"已插入数组\n"<<std::endl;
+        flag="-1";
+    }
+    std::cout<<"一共输入了"<<wordplus.Phrases.size()<<"个词组及释义\n"<<std::endl;
+
+    while(sentence!="0")
+    {
+        std::cout<<"正在进行相关例句(停止添加请输入0)："<<std::endl;
+        while(flag!="1")
+        {
+            std::cout<<"请输入相关例句（回车结束）："<<std::endl;
+            while(getchar()!='\n');
+            getline(std::cin,sentence);
+            if(sentence=="0")
+                break;
+            std::cout<<"\n您刚刚输入的是："<< sentence <<"\n确认无误请输入1:";
+            std::cin>>flag;
+        }
+        if(sentence=="0")
+            break;
+        wordplus.Sentences.emplace_back(sentence);
+        std::cout<<"已插入数组\n"<<std::endl;
+        flag="-1";
+    }
+    std::cout<<"一共输入了"<<wordplus.Sentences.size()<<"个例句\n"<<std::endl;
+    
+    std::cout<<"已完成本次深度积累\n"<<std::endl;
+
+    end:
+    return wordplus;
+}
