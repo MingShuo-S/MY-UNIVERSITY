@@ -133,6 +133,7 @@ int AddWordInWORDS()
 {    
     std::fstream AppFile(INPUT_FILE_PATH,std::ios::in|std::ios::out);
     std::fstream PAppFile(PLUS_INPUT_FILE_PATH,std::ios::in|std::ios::out);
+    
     AutoAppEnter(AppFile);
     AutoAppEnter(PAppFile);
 
@@ -172,6 +173,15 @@ int AddWordInWORDS()
         std::cin>>word;
         if(word=="0")
             goto s_end;
+        else if(word=="1")
+        {
+            std::cout<<"\n您已经进入单词搜索（开发者隐藏功能）:\n"<<std::endl;
+            std::cout<<"请输入你想要确认的单词:";
+            std::cin>>word;
+            SearchInAfter(word);
+            continue;
+        }
+
         std::cin>>meaning;
         if(meaning=="0")
             goto s_end;
@@ -181,18 +191,18 @@ int AddWordInWORDS()
         std::cin>>flag;
         if(flag=="1")
             std::cout<<"\n正在录入文件……"<<std::endl<<std::endl;
-        if(flag=="2")
+        else if(flag=="2")
         {
             std::cout<<"\n该单词已经进入深度积累……\n"<<std::endl;
             WordPlus pp=BeWordPlus(word,meaning);
             PAppFile.clear();
             PAppFile.seekp(0,std::ios::end);
-            PAppFile<<pp<<std::endl;
+            PAppFile<<'\n'<<pp<<std::endl;
             std::cout<<"已将深度积累后的单词插入DEEP_ACCUMULATION.txt\n"<<std::endl;
         }
         else
         {
-            std::cout<<"收到，请重新输入————"<<std::endl;
+            std::cout<<"一猜就是不小心，请重新输入————"<<std::endl;
             continue;
         }
         
@@ -418,6 +428,7 @@ int DASortIntoAfter()
     outFile.close();
     return 0;
 }
+
 
 
 

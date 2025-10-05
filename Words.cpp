@@ -80,11 +80,12 @@ void GetWordPlus(WordPlus& wordplus)
             getline(std::cin,phrase);
             if(phrase=="0")
                 break;
-            std::cin>>pmeaning;
+            getline(std::cin,pmeaning);
             if(pmeaning=="0")
                 break;
             std::cout<<"\n您刚刚输入的是："<<phrase<<' '<<pmeaning<<"\n确认无误请输入1:";
             std::cin>>flag;
+            while(getchar()!='\n');
         }
         if(phrase=="0"||pmeaning=="0")
             break;
@@ -101,12 +102,13 @@ void GetWordPlus(WordPlus& wordplus)
         while(flag!="1")
         {
             std::cout<<"请输入相关例句（回车结束）："<<std::endl;
-            while(getchar()!='\n');
+
             getline(std::cin,sentence);
             if(sentence=="0")
                 break;
             std::cout<<"\n您刚刚输入的是："<< sentence <<"\n确认无误请输入1:";
             std::cin>>flag;
+            while(getchar()!='\n');
         }
         if(sentence=="0")
             break;
@@ -142,15 +144,15 @@ WordPlus BeWordPlus(std::string const& inword,std::string const& inmeaning)
         while(flag!="1")
         {
             std::cout<<"请输入词组与中文释义（换行隔开）："<<std::endl;
-            while(getchar()!='\n');
             getline(std::cin,phrase);
             if(phrase=="0")
                 break;
-            std::cin>>pmeaning;
+            getline(std::cin,pmeaning);
             if(pmeaning=="0")
                 break;
             std::cout<<"\n您刚刚输入的是："<<phrase<<' '<<pmeaning<<"\n确认无误请输入1:";
             std::cin>>flag;
+            while(getchar()!='\n');
         }
         if(phrase=="0"||pmeaning=="0")
             break;
@@ -167,12 +169,12 @@ WordPlus BeWordPlus(std::string const& inword,std::string const& inmeaning)
         while(flag!="1")
         {
             std::cout<<"请输入相关例句（回车结束）："<<std::endl;
-            while(getchar()!='\n');
             getline(std::cin,sentence);
             if(sentence=="0")
                 break;
             std::cout<<"\n您刚刚输入的是："<< sentence <<"\n确认无误请输入1:";
             std::cin>>flag;
+            while(getchar()!='\n');
         }
         if(sentence=="0")
             break;
