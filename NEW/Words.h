@@ -12,6 +12,7 @@ public:
     Word() :word("0"), meaning("1") {};
     Word(std::string& inword, std::string& inmeaning) :word(inword), meaning(inmeaning) {};
     Word(const Word& other) : word(other.word), meaning(other.meaning) {}
+    void reset();
     
     bool operator>(const Word& word1);
     bool operator<(const Word& word1);

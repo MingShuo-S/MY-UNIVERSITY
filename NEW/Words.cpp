@@ -1,6 +1,12 @@
 #include "Words.h"
 
 /*----------Word成员函数实现------------*/
+void Word::reset()
+{
+    word='0';
+    meaning='0';
+}
+
 bool Word::operator>(const Word& word1)
 {
     return word>word1.word;
@@ -24,7 +30,7 @@ Word& Word::operator=(const Word& word1)
 /*-----------Word输出实现------------*/
 std::ostream& operator<<(std::ostream& os,const Word& word)
 {
-    os << word.word <<"   "<< word.meaning << std::endl;
+    os << word.word <<"\n"<< word.meaning << std::endl;
     return os;
 }
 
@@ -46,7 +52,7 @@ std::ostream& operator<<(std::ostream& os,const WordPlus& p)
     os<<p.word<<'\n'<<p.WordClass<<' '<<p.meaning<<std::endl;
     for(i=0;i<n1;i++)
     {
-        os<<'-'<<p.Phrases[i]<<"  "<<p.PhrasesMeaning[i]<<std::endl;
+        os<<"-"<<p.Phrases[i]<<"  "<<p.PhrasesMeaning[i]<<std::endl;
     }
     for(i=0;i<n2;i++)
     {
