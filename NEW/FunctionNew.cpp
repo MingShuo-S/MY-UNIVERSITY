@@ -15,22 +15,129 @@ namespace fs=std::filesystem;
 
 //========================================================================================//
 /*--------全局变量--------*/
-std::map <std::string,std::string> 
+const std::map <std::string,std::string> 
 menu={
     {"0","退出"},
     {"1","添加新单词"},
-    {"?","查看功能菜单"}
+    {"2","进入复习模式"},
+    {"3","查找单词"},
+    {"?","查看指令菜单"}
 } ;
 std::map <std::string,std::string> 
-fuc={
+func={
     {"exit","返回主菜单"},
-    {"add","添加新单词"},
-    {"help","查看功能菜单"}
+    {"search","在目前所在文档中查找该词，该行第二个词为被查词"},
+    {"fuzzy_search","在目前所在文件中模糊查找该词，该行第二个词为被查词"},
+    {"delete","删除某个词，进入该功能后需要确认具体删除哪个"},
+    {"modify","修改某个词的释义，该行第二个词为被修改的词，进入该功能后需要确认具体修改哪个"},
+    {"promote","给某个词添加深度积累，该行第二个词为被修改的词，进入该功能后需要确认提升哪个"},
+    {"withdraw","删除最新一行，可以用于撤回错误的单词、词组、句子或天数"},
+    {"help","查看指令菜单"}
 } ;
+
+
+const std::vector<std::string> 
+//如果这些字符在行首，那么输出的时候就忽略这一行（输入的写了太多了不想改了（死））
+ignore={
+    "*",
+    "~"
+},
+//如果这个字符在行首，那么说明这一行隶属于上面的单词（写入的时候删掉这个字符）
+affiliate={
+    "-"
+},
+//用于保存预设的提示句
+tips={
+    "输入任意指令请以“=”开头，如果想查看看指令菜单请输入“=help”~"
+}
+;
 
 
 //========================================================================================//
 /*--------辅助功能--------*/
+/*---中转---*/
+int Functions(fs::path p,std::string order)
+{
+    std::string target;
+    std::vector<Word> words;
+
+    if(!func.count(order))
+    {
+        std::cerr<<"指令未收录，无法运行"<<std::endl;
+        return 1;
+    }
+
+    if(order=="exit"){
+        return 2;
+    }else if(order=="help"){
+        Menu2();
+    }else if(order=="search"){
+        if(getline(std::cin,target))
+        {
+            words=Search(p,target);
+            PrintVector<Word> (words);
+        }
+        else{
+            std::cerr<<"未输入要查找的单词，无法执行"<<std::endl;
+            return 1;
+        }
+    }else if(order=="fuzzy_search"){
+        if(getline(std::cin,target))
+        {
+            words=FuzzySearch(p,target);
+            PrintVector<Word> (words);
+        }
+        else{
+            std::cerr<<"未输入要查找的单词，无法执行"<<std::endl;
+            return 1;
+        }
+    }else if(order=="delete"){
+        if(getline(std::cin,target))
+        {
+            InteractiveDelete(p,target);
+        }
+        else{
+            std::cerr<<"未输入要查找的单词，无法执行"<<std::endl;
+            return 1;
+        }
+    }else if(order=="modify"){
+        if(getline(std::cin,target))
+        {
+            InteractiveModify(p,target);
+        }
+        else{
+            std::cerr<<"未输入要查找的单词，无法执行"<<std::endl;
+            return 1;
+        }
+    }else if(order=="promote"){
+
+    }else if(order=="withdraw"){
+
+    }
+
+    return 0;
+}
+
+
+/*---良输入---*/
+int GetNum_s()
+{
+    int i;
+    while(1)
+    {
+        std::cin>>i;
+        if(std::cin.fail())
+        {
+            std::cout<<"输入并非数字，请重新输入"<<std::endl;
+            std::cin.clear();
+            while(getchar()!='\n');
+        }
+        else
+            break;
+    }
+    return i;
+}
+
 /*---判断---*/
 bool IsFileWritePosAtEnd(std::fstream& f)
 {
@@ -46,7 +153,62 @@ bool IsFileWritePosAtEnd(std::fstream& f)
     return current==end;
 }
 
+bool IsSimilarWord(std::string target,std::string ano,double accuracy=0.7)
+{
+    int differ=0;
+    int size1=target.size(),size2=ano.size();
+    int upper=size1,lower=size1+size2;
+    
+    if(upper<size2)
+        upper=size2;
+    lower-=upper;
 
+    if(upper-lower>10*(1-accuracy))
+        return false;
+
+    std::vector<int> s(lower,0);
+
+    for(int i=1;i<lower+2;i++)
+    {
+        if(target[i]==ano[i+differ])
+            s[i+1]=s[i];
+        else if(target[i]==ano[i+1+differ])
+        {
+            differ++;
+            s[i+1]=s[i]+1;
+        }
+        else if(target[i]==ano[i-1+differ])
+        {
+            differ--;
+            s[i+1]=s[i]+1;
+        }
+        else
+            s[i+1]=s[i]+1;
+    }
+    
+    return s[lower+1]<=lower*(1-accuracy);
+}
+
+bool IsAtHeadoftheLine(std::fstream& p)
+{
+    std::streampos pos=p.tellp();
+    if(p.tellp()==0) return true;
+    if(!p)  
+    {
+        std::cerr<<"文件打开失败，无法判断指针位置"<<std::endl;
+        return false;
+    }
+    p.seekp(-1,std::ios::cur);
+    char c=p.get();
+    p.seekp(pos);
+
+    if(c=='\n')
+        return true;
+    else 
+        return false;
+}
+
+//========================================================================================//
 /*--------基础功能--------*/
 /*---显示---*/
 //打一定量空格
@@ -57,7 +219,7 @@ void Space(int n)
 }
 
 //标题格式输出
-void Title(std::string a)
+void Title(const std::string& a)
 {
     int total=30;
     if(a.length()>total)
@@ -75,7 +237,7 @@ void Title(std::string a)
     std::cout<<std::endl;
 }
 
-void BigTitle(std::string a)
+void BigTitle(const std::string& a)
 {
     int total=45;
     if(a.length()>total)
@@ -94,17 +256,18 @@ void BigTitle(std::string a)
 }
 
 //Tips格式输出
-void Tips(std::string tip)
+void Tips(const std::string& tip)
 {
     std::cout<<"*Tips:"<<tip<<std::endl;
 }
 
 //Notation格式输出
-void Notation(std::string note)
+void Notation(const std::string& note)
 {
     std::cout<<"\n*"<<note<<'\n'<<std::endl;
 }
 
+/*
 //一次性输出WORD数组
 template <class A>
 int PrintVector(const std::vector<A>& a )
@@ -139,6 +302,7 @@ int PrintVectorSlowly(const std::vector<A>& a ,int total=10000)
     std::cout<<"输出完毕，共输出"<<n<<"个单位,耗时"<<total/1000.0<<"秒\n"<<std::endl;
     return 0;
 }
+*/
 
 //换下一页
 
@@ -158,7 +322,7 @@ void AutoAppEnter(std::fstream& p)
     if(c!='\n') p<<'\n';
 }
 
-//输入一个word
+//打包一个word
 Word Pack(std::fstream& File)
 {
     Word word;
@@ -257,6 +421,31 @@ std::vector<Word> PackPortion(fs::path filepath,int start=0,int end=99999)
     }
 
     InFile.close();
+    return words;
+}
+
+//将位置数组代表的单词全都打包至数组当中 /2
+std::vector<Word> PackPortion(fs::path filepath,std::vector<std::streampos> poses)
+{
+    std::fstream File(filepath,std::ios::in|std::ios::out);
+    std::string line;
+    Word w;
+    std::vector<Word> words;
+    int n=poses.size();
+
+    if(!File.is_open())
+    {
+        std::cerr<<filepath.string()<<"打开失败"<<std::endl;
+        return words;
+    }
+
+    for(int i=0;i<n;i++)
+    {
+        File.seekp(poses[i]);
+        words.emplace_back(Pack(File));
+    }
+    
+    File.close();
     return words;
 }
 
@@ -486,20 +675,188 @@ std::vector<Word> Search(fs::path path,std::string target)
 } 
 
 //查找形近词，存入数组
+std::vector<Word> SearchSimilarWords(fs::path p,std::string target,int baseline=5)
+{
+    std::fstream f(p,std::ios::in);
+    std::vector<Word> w=PackAll(p),similars;
 
+    int n=w.size(),num=0;
+
+    for(int i=0;i<n;i++)
+    {
+        if(IsSimilarWord(target,w[i].word))
+        {
+            similars.emplace_back(w[i]);
+        }
+    }
+
+    return similars;
+}
 
 //根据词根词缀查找相关单词，存入数组
-
+std::vector<Word> SearchWithRootorAffixe(fs::path p,std::string target)
+{
+    //看什么看，以后再写
+}
 
 /*---修改---*/
 //指定已在文件中的单词进行深度积累，并覆盖原有单词记录（只是在原有单词处写一个删除标记再重新计入）
 
 
-//指定修改文件中的单词内容，并覆盖原有单词记录（只是在原有单词处写一个删除标记再重新计入）
+//删掉这个单词（单一功能，给单词和注释在的这几行前面都加上~）
+int Delete(fs::path p,std::streampos pos)
+{
+    std::fstream f(p,std::ios::in,std::ios::out);
+    f.seekg(pos);
 
+    std::string after{},line;
 
-//删除某日标记(不小心按错时候用)
+    if(IsAtHeadoftheLine(f))
+    {
+        while(std::getline(f,line))
+            after+=line+'\n';
 
+        f.clear();
+        f.seekg(pos);
+        f<<"~"<<after;
+        return 0;
+    }
+    else{
+        std::cerr<<"单词删除失败"<<std::endl;
+        return 1;
+    }
+}
+
+//大量删除的时候使用，免得一直开关文件把文件炸了
+int Delete(fs::path p,std::vector<std::streampos> poses)
+{
+    std::fstream f(p,std::ios::in,std::ios::out);
+    std::string after{},line;
+
+    int n=poses.size();
+
+    if(n==0)
+        return 0;
+
+    for(int i=0;i<n;i++)
+    {
+        f.seekg(poses[i]);
+
+        after.clear();
+        line.clear();
+
+        if(IsAtHeadoftheLine(f))
+        {
+            while(std::getline(f,line))
+                after+=line+'\n';
+
+            f.clear();
+            f.seekg(poses[i]);
+            f<<"~"<<after;
+        }
+        else{
+            std::cerr<<"第"<<i<<"个单词删除失败"<<std::endl;
+            return 1;
+        }
+
+    }
+    return 0;
+}
+
+//指定修改文件中的单词内容（交互式,以免改错）  //2
+void InteractiveModify(fs::path p,std::string target)
+{
+    std::vector<Word> ws;
+    std::vector<std::streampos> poses;
+    std::fstream File(p,std::ios::out|std::ios::in);
+    int num;
+    std::string meaning,flag="0";
+
+    Notation("您已进入单词修改功能……");
+    
+    //获取单词位置，并将单词存入数组
+    poses=GetWordPoses(p,target);
+    ws=PackPortion(p,poses);
+
+    int n=ws.size();
+    //确认是否删的是这个单词
+    std::cout<<"请确认你要修改的单词序号（请谨慎选择）："<<std::endl;
+    for(int i;i<n;i++)
+        std::cout<<i<<"-"<<ws[i].word<<"   "<<ws[i].meaning<<std::endl;
+    
+    while(flag!="1")
+    {
+        std::cout<<"请输入序号：";
+        num=GetNum_s();
+        if(num>n||num<0)
+        {
+            std::cout<<"输入有误，请重新输入\n"<<std::endl;
+            continue;
+        }
+        else
+        {
+            std::cout<<"您刚刚输入的是"<<num<<"\n输入正确请输入1：";
+            std::cin>>flag;
+        }
+    }
+
+    Delete(p,poses[num]);
+    flag="1";
+
+    std::cout<<"您正在修改的单词是："<<ws[n].word<<std::endl;
+
+    while(flag!="1")
+    {
+        std::cout<<"请输入修改后的释义：";
+        std::cin>>meaning;
+        std::cout<<"\n您刚刚输入的是："<<meaning<<"\n确认请输入1:";
+        std::cin>>flag;
+    }
+    Notation("修改结束");
+}
+
+//交互式删除某个单词或某日标记
+void InteractiveDelete(fs::path p,std::string target)
+{
+    std::vector<Word> ws;
+    std::vector<std::streampos> poses;
+    std::fstream File(p,std::ios::out|std::ios::in);
+    int num;
+    std::string meaning,flag="0";
+
+    Notation("您已进入单词修改功能……");
+    
+    //获取单词位置，并将单词存入数组
+    poses=GetWordPoses(p,target);
+    ws=PackPortion(p,poses);
+
+    int n=ws.size();
+    //确认是否删的是这个单词
+    std::cout<<"请确认你要删除的单词序号（请谨慎选择）："<<std::endl;
+    for(int i;i<n;i++)
+        std::cout<<i<<"-"<<ws[i].word<<"   "<<ws[i].meaning<<std::endl;
+    
+    flag="0";
+
+    while(flag!="1")
+    {
+        std::cout<<"请输入序号：";
+        num=GetNum_s();
+        if(num>n||num<0)
+        {
+            std::cout<<"输入有误，请重新输入\n"<<std::endl;
+            continue;
+        }
+        else
+        {
+            std::cout<<"您刚刚输入的是"<<num<<"\n输入正确请输入1：";
+            std::cin>>flag;
+        }
+    }
+    Delete(p,poses[num]);
+
+    Notation("已成功删除");
+}
 
 /*---标记---*/
 //指定已在文件中的单词进行标记，进入UPPER_WORDS
@@ -534,14 +891,14 @@ void Menu()
     {
         std::cout<<it->first<<"--"<<it->second<<std::endl;
     }
-    std::cout<<"0--"<<menu["0"]<<'\n'<<std::endl;
+    std::cout<<"0--"<<menu.at("0")<<'\n'<<std::endl;
 }
 
-//功能菜单（转换）
+//指令菜单（转换）
 void Menu2()
 {
     Title("功能菜单");
-    for(const auto& pair : fuc)
+    for(const auto& pair : func)
     {
         std::cout<<pair.first<<"--"<<pair.second<<std::endl;
     }
