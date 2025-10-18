@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
+fs::path configDir=fs::current_path();
 
 //是否首次运行检查
 bool IsFirstRun()
@@ -59,15 +60,9 @@ void AppConfig::CreatFileIfNotExists(const fs::path& filePath)
 //正式初始化
 int AppConfigInitialize()
 {
-    if(IsFirstRun())
-    {
         std::cout<<"检测到此为第一次运行……正在进行初始化，请耐心等待……\n"<<std::endl;
-        extern AppConfig CFile;
-        CFile.instance();
-        CFile.initialize(configDir);
+        AppConfig& config=AppConfig::instance();
+        config.initialize(configDir);
         std::cout<<"初始化已完成，祝您在本应用体验愉快\n"<<std::endl;
         return 0;
-    }
-    else
-        return 1;
 }

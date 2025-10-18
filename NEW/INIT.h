@@ -1,7 +1,7 @@
 #include <filesystem>
 
 namespace fs=std::filesystem;
-fs::path configDir=fs::current_path();
+extern fs::path configDir;
 
 //是否首次运行检查
 bool IsFirstRun();

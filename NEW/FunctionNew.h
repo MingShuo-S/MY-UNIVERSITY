@@ -3,28 +3,38 @@
 #include <map>
 #include <iostream>
 #include <filesystem>
+#include <thread>   // 包含线程库
+
+#include "Words.h"
+#include "INIT.h"
+#include "HEAP_SORT.h"
 
 namespace fs=std::filesystem;
+extern AppConfig& config1;
 
 //========================================================================================//
 /*--------全局变量--------*/
-const std::map <std::string,std::string> menu;
-const std::map <std::string,std::string> func;
+extern const std::map <std::string,std::string> 
+menu ;
+extern const std::vector<std::pair<std::string,std::string>> 
+func;
 
 
-const std::vector<std::string> 
+
+extern const std::vector<std::string> 
 //如果这些字符在行首，那么输出的时候就忽略这一行（输入的写了太多了不想改了（死））
 ignore,
 //如果这个字符在行首，那么说明这一行隶属于上面的单词（写入的时候删掉这个字符）
 affiliate,
 //用于保存预设的提示句
-tips;
+tips
+;
 
 
 //========================================================================================//
 /*--------辅助功能--------*/
 /*---中转---*/
-int Functions(fs::path p,std::string order);
+int Functions(fs::path p,std::string order,fs::path plus=config1.PLUSWORDS());
 
 
 /*---良输入---*/
@@ -54,7 +64,7 @@ void Notation(const std::string& note);
 
 //一次性输出WORD数组
 template <class A>
-int PrintVector(const std::vector<A>& a )
+inline int PrintVector(const std::vector<A>& a)
 {
     int n=a.size();
 
@@ -69,9 +79,31 @@ int PrintVector(const std::vector<A>& a )
     return 0;
 }
 
+template <>
+inline int PrintVector<Word>(const std::vector<Word>& a)
+{
+    int n=a.size();
+
+    if(n==0)
+        return 1;
+
+    for(int i=0;i<n;i++)
+    {
+        for(std::string no : ignore )
+        {
+            if(a[i].word.find_first_of(no)==0)
+                continue;
+        }
+        std::cout<<a[i]<<std::endl;
+    }
+    std::cout<<"输出完毕，共输出"<<n<<"个单位\n"<<std::endl;
+    return 0;
+}
+
+
 //慢慢地输出WORD数组
 template <class A>
-int PrintVectorSlowly(const std::vector<A>& a ,int total=10000)
+inline int PrintVectorSlowly(const std::vector<A>& a,int total=10000)
 {
     int n=a.size();
 
@@ -84,6 +116,111 @@ int PrintVectorSlowly(const std::vector<A>& a ,int total=10000)
         std::this_thread::sleep_for(std::chrono::milliseconds(total/n));
     }
     std::cout<<"输出完毕，共输出"<<n<<"个单位,耗时"<<total/1000.0<<"秒\n"<<std::endl;
+    return 0;
+}
+
+
+// 输出数组至文件（覆盖原内容）
+template <class A>
+inline int PutOutVectorTo(const std::vector<A>& a,fs::path p)
+{
+    std::ofstream OutFile(p);
+    int n=a.size();
+
+    if(!OutFile.is_open())
+    {
+        std::cerr<<"文件打开失败"<<std::endl;
+        return 1;
+    }
+
+    if(n==0)
+        return 1;
+
+    for(int i=0;i<n;i++)
+    {
+        OutFile<<a[i]<<std::endl;
+    }
+    std::cout<<"输出完毕，共输出"<<n<<"个单位\n"<<std::endl;
+    return 0;
+}
+
+template <>
+inline int PutOutVectorTo<Word>(const std::vector<Word>& a,fs::path p)
+{
+    std::ofstream OutFile(p);
+    int n=a.size();
+
+    if(!OutFile.is_open())
+    {
+        std::cerr<<"文件打开失败"<<std::endl;
+        return 1;
+    }
+
+    if(n==0)
+        return 1;
+
+    for(int i=0;i<n;i++)
+    {
+        for(std::string no : ignore )
+        {
+            if(a[i].word.find_first_of(no)==0)
+                continue;
+        }
+        OutFile<<a[i]<<std::endl;
+    }
+    std::cout<<"输出完毕，共输出"<<n<<"个单位\n"<<std::endl;
+    return 0;
+}
+
+// 输出数组至文件（文件末尾添加）
+template <class A>
+inline int AppVectorTo(const std::vector<A>& a,fs::path p)
+{
+    std::fstream AppFile(p,std::ios::app);
+    int n=a.size();
+
+    if(!AppFile.is_open())
+    {
+        std::cerr<<"文件打开失败"<<std::endl;
+        return 1;
+    }
+
+    if(n==0)
+        return 1;
+
+    for(int i=0;i<n;i++)
+    {
+        AppFile<<a[i]<<std::endl;
+    }
+    std::cout<<"输出完毕，共输出"<<n<<"个单位\n"<<std::endl;
+    return 0;
+}
+
+template <>
+inline int AppVectorTo<Word>(const std::vector<Word>& a,fs::path p)
+{
+    std::fstream AppFile(p,std::ios::app);
+    int n=a.size();
+
+    if(!AppFile.is_open())
+    {
+        std::cerr<<"文件打开失败"<<std::endl;
+        return 1;
+    }
+
+    if(n==0)
+        return 1;
+
+    for(int i=0;i<n;i++)
+    {
+        for(std::string no : ignore )
+        {
+            if(a[i].word.find_first_of(no)==0)
+                continue;
+        }
+        AppFile<<a[i]<<std::endl;
+    }
+    std::cout<<"输出完毕，共输出"<<n<<"个单位\n"<<std::endl;
     return 0;
 }
 
@@ -104,7 +241,7 @@ Word Pack(std::fstream& File);
 std::vector<Word> PackAll(fs::path filepath);
 
 //将文件指定内容打包为vector<Word>,进而方便排序
-std::vector<Word> PackPortion(fs::path filepath,int start=0,int end=99999);
+std::vector<Word> PackPortion(fs::path filepath,int start,int end);
 
 //将位置数组代表的单词全都打包至数组当中 /2
 std::vector<Word> PackPortion(fs::path filepath,std::vector<std::streampos> poses);
@@ -112,7 +249,7 @@ std::vector<Word> PackPortion(fs::path filepath,std::vector<std::streampos> pose
 /*---输入---*/
 //交互式普通输入文件，一次一个词（检测到在单词侧首位输入'='时或只输入'0'退出） 
 //// -'='表示进入指令  -'0'该程序默认退出符
-std::string AddWord(std::fstream& f);
+std::string AddWord(std::fstream& f,std::fstream& plus);
 
 //===不想做直接的深度积累功能了===
 //交互式确认是否要进入新的一天
@@ -146,7 +283,7 @@ std::vector<Word> SearchWithRootorAffixe(fs::path p,std::string target);
 
 /*---修改---*/
 //指定已在文件中的单词进行深度积累，并覆盖原有单词记录（只是在原有单词处写一个删除标记再重新计入）
-
+int PromoteToB(fs::path p,fs::path B,std::string target);
 
 //删掉这个单词（单一功能，给单词和注释在的这几行前面都加上~）
 int Delete(fs::path p,std::streampos pos);
@@ -159,6 +296,8 @@ void InteractiveModify(fs::path p,std::string target);
 //交互式删除某个单词或某日标记
 void InteractiveDelete(fs::path p,std::string target);
 
+//删除的时候返回单词内容
+Word Pop(fs::path p,std::streampos pos);
 /*---标记---*/
 //指定已在文件中的单词进行标记，进入UPPER_WORDS
 
@@ -187,15 +326,17 @@ void InteractiveDelete(fs::path p,std::string target);
 void Menu();
 //指令菜单（转换）
 void Menu2();
+//圣经
+void Bible();
 
 
 //========================================================================================//
 /*--------应用功能--------*/
 //进行单次排序，包括输入与输出（堆排序在头文件中已经有了），会使用到打包
-
+int SortAintoB(fs::path A,fs::path B);
 
 //将单词输入文件（核心交互模式）
-
+int CoreAddWords(fs::path p,fs::path plus=config1.PLUSWORDS());
 
 //在某个文件内进行模糊查找（需要用到打包，以更好呈现内容）
 
